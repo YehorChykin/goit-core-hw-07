@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 from collections import UserDict
+from datetime import datetime, timedelta
 
 class Field:
     def __init__(self, value):
@@ -71,6 +71,11 @@ class Record:
         return f"Contact name: {self.name}, phones: {'; '.join(str(p) for p in self.phones)}, birthday: {self.birthday}" if self.birthday else f"Contact name: {self.name}, phones: {'; '.join(str(p) for p in self.phones)}"
 
 class AddressBook(UserDict):
+    def __init__(self, contacts_file_path):
+        super().__init__()
+        self.contacts_file_path = contacts_file_path
+        self.load_birthdays_from_file()
+
     def add_record(self, record):
         self.data[record.name.value] = record
 
@@ -88,47 +93,34 @@ class AddressBook(UserDict):
         for record in self.data.values():
             if record.birthday:
                 birthday_date = datetime.strptime(record.birthday.value, "%d.%m.%Y").date()
-                if today <= birthday_date < next_week:
-                    upcoming_birthdays.append(record.name.value)
+                birthday_date = birthday_date.replace(year=datetime.now().year)
+                difference_days = (birthday_date - today).days
+                if difference_days <= 7 and difference_days >= 0:
+                    if birthday_date.weekday() >= 5:
+                        days_until_monday = 7 - birthday_date.weekday()
+                        birthday_date += timedelta(days=days_until_monday)
+                    upcoming_birthdays.append({"name": record.name.value, "Congratulatinons_day": birthday_date.strftime("%Y.%m.%d")})
         return upcoming_birthdays
+
+    def load_birthdays_from_file(self):
+        try:
+            with open(self.contacts_file_path, 'r') as file:
+                for line in file:
+                    name, *data = line.strip().split(',')
+                    if len(data) == 1:
+                        # Если дата рождения отсутствует в файле, создаем контакт без нее
+                        record = Record(name)
+                    elif len(data) == 2:
+                        # Если дата рождения присутствует в файле, добавляем ее к контакту
+                        record = Record(name)
+                        record.add_birthday(data[1])
+                    else:
+                        # Неправильный формат строки, игнорируем ее
+                        continue
+                    self.add_record(record)
+        except FileNotFoundError:
+            pass
+
 
     def __str__(self):
         return '\n'.join(str(record) for record in self.data.values())
-
-book = AddressBook()
-
-john_record = Record("John")
-john_record.add_phone("+1234567890")
-john_record.add_phone("+5555555555")
-john_record.add_birthday("23.01.1985")
-
-book.add_record(john_record)
-
-jane_record = Record("Jane")
-jane_record.add_phone("+9876543210")
-jane_record.add_birthday("27.01.1990")
-book.add_record(jane_record)
-
-print("All records in the address book:")
-print(book)
-
-john = book.find_record("John")
-if john:
-    john.edit_phone("+1234567890", "+1112223333")
-    print("Updated John's record:")
-    print(john)
-
-if john:
-    found_phone = john.find_phone("+5555555555")
-    print(f"{john.name}: {found_phone}")
-
-book.delete_record("Jane")
-print("Address book after deleting Jane's record:")
-print(book)
-
-upcoming_birthday_names = book.get_upcoming_birthdays()
-if upcoming_birthday_names:
-    print("Users to congratulate next week:")
-    print(", ".join(upcoming_birthday_names))
-else:
-    print("No upcoming birthdays next week")

@@ -1,7 +1,7 @@
 from main1 import AddressBook, Record, Birthday
 from datetime import datetime, timedelta
 
-contacts_file_path = r"D:\Projects\start_python\modul_7\HW_7\contacts.txt"
+contacts_file_path = r"D:\Projects\start_python\modul_7\goit-core-hw-07\contacts.txt"
 
 print("Hi, can I help you?")
 
@@ -26,14 +26,13 @@ def add_contact(name, phone_number):
         elif not phone_number[1:].isdigit():
             raise ValueError("Invalid phone number format")
             
-        with open(contacts_file_path, 'a') as file:
+        with open(contacts_file_path, 'a+') as file:  
             file.write(f"{name},{phone_number}\n")
         print("Contact added.")
         return "Contact added."
     except Exception as e:
         print(f"Error: {e}")
         return f"Error: {e}"
-
 
 @input_error
 def change_contact(name, new_phone_number):
@@ -45,13 +44,14 @@ def change_contact(name, new_phone_number):
             if contact_name == name:
                 lines[i] = f"{name},{new_phone_number}\n"
                 break
-        with open(contacts_file_path, 'w') as file:
+        with open(contacts_file_path, 'w') as file:  
             file.writelines(lines)
         print("Contact updated.")
         return "Contact updated."
     except Exception as e:
         print(f"Error: {e}")
         return f"Error: {e}"
+
 
 @input_error
 def show_phone(name):
@@ -90,6 +90,10 @@ def add_birthday(args, book):
     birthday = args[1]
     try:
         book.find_record(name).add_birthday(birthday)
+
+        with open(contacts_file_path, 'a+') as file:
+            file.write(f"{name},{birthday}\n")
+        
         return f"Birthday added for {name}."
     except ValueError as e:
         return str(e)
@@ -100,10 +104,13 @@ def show_birthday(args, book):
         return "Invalid number of arguments. Usage: show-birthday [name]"
     name = args[0]
     record = book.find_record(name)
-    if record and record.birthday:
-        return f"{name}'s birthday: {record.birthday.value}"
+    if record:
+        if record.birthday:
+            return f"{name}'s birthday: {record.birthday.value}"
+        else:
+            return f"No birthday found for {name}."
     else:
-        return f"No birthday found for {name}."
+        return f"No contact found for {name}."
 
 @input_error
 def birthdays(args, book):
@@ -127,7 +134,7 @@ def parse_input(user_input):
     return command, arguments
 
 def main():
-    book = AddressBook()
+    book = AddressBook(contacts_file_path)
 
     while True:
         user_input = input("Enter a command (hello/close/exit/add/change/show_phone/all/add-birthday/show-birthday/birthdays): ")
@@ -141,13 +148,25 @@ def main():
         elif command == "add":
             name = input("Enter your contact name: ").strip()
             phone_number = input("Enter your contact number: ").strip()
-            book.add_record(Record(name))
-            book.data[name].add_phone(phone_number)
+            record = Record(name)
+            record.add_phone(phone_number)
+            book.add_record(record)
+            with open(contacts_file_path, 'a+') as file:  
+                file.write(f"{name},{phone_number}\n")
             print("Contact added.")
         elif command == "change":
             name = input("Enter the contact name: ").strip()
             new_phone_number = input("Enter the new phone number: ").strip()
             book.find_record(name).edit_phone(book.find_record(name).phones[0].value, new_phone_number)
+            with open(contacts_file_path, 'r') as file:
+                lines = file.readlines()
+            for i, line in enumerate(lines):
+                contact_name, _ = line.strip().split(',')
+                if contact_name == name:
+                    lines[i] = f"{name},{new_phone_number}\n"
+                    break
+            with open(contacts_file_path, 'w') as file:  
+                file.writelines(lines)
             print("Contact updated.")
         elif command == "show_phone":
             name = input("Enter the contact name: ").strip()
@@ -159,7 +178,9 @@ def main():
                 phones = '; '.join([phone.value for phone in record.phones])
                 print(f"Name: {record.name.value}, Phones: {phones}")
         elif command == "add-birthday":
-            result = add_birthday(arguments, book)
+            name = input("Enter the contact name: ").strip()
+            birthday = input("Enter the birthday (DD.MM.YYYY): ").strip()
+            result = add_birthday([name, birthday], book)
             print(result)
         elif command == "show-birthday":
             result = show_birthday(arguments, book)
