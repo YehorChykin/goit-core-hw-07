@@ -137,7 +137,7 @@ def main():
     book = AddressBook(contacts_file_path)
 
     while True:
-        user_input = input("Enter a command (hello/close/exit/add/change/show_phone/all/add-birthday/show-birthday/birthdays): ")
+        user_input = input("Enter a command (hello/close/exit/add/change/show_phone/all/add_b/s_b/birthdays): ")
         command, arguments = parse_input(user_input)
 
         if command == "hello":
@@ -146,7 +146,7 @@ def main():
             print("Goodbye!")
             break
         elif command == "add":
-            name = input("Enter your contact name: ").strip()
+            name = input("Enter your contact name: ")
             phone_number = input("Enter your contact number: ").strip()
             record = Record(name)
             record.add_phone(phone_number)
@@ -155,7 +155,7 @@ def main():
                 file.write(f"{name},{phone_number}\n")
             print("Contact added.")
         elif command == "change":
-            name = input("Enter the contact name: ").strip()
+            name = input("Enter the contact name: ")
             new_phone_number = input("Enter the new phone number: ").strip()
             book.find_record(name).edit_phone(book.find_record(name).phones[0].value, new_phone_number)
             with open(contacts_file_path, 'r') as file:
@@ -169,7 +169,7 @@ def main():
                 file.writelines(lines)
             print("Contact updated.")
         elif command == "show_phone":
-            name = input("Enter the contact name: ").strip()
+            name = input("Enter the contact name: ")
             phone_number = book.find_record(name).phones[0].value
             print(f"Name: {name}, Number: {phone_number}")
         elif command == "all":
@@ -177,12 +177,12 @@ def main():
             for record in book.data.values():
                 phones = '; '.join([phone.value for phone in record.phones])
                 print(f"Name: {record.name.value}, Phones: {phones}")
-        elif command == "add-birthday":
-            name = input("Enter the contact name: ").strip()
+        elif command == "add_b":
+            name = input("Enter the contact name: ")
             birthday = input("Enter the birthday (DD.MM.YYYY): ").strip()
             result = add_birthday([name, birthday], book)
             print(result)
-        elif command == "show-birthday":
+        elif command == "s_b":
             result = show_birthday(arguments, book)
             print(result)
         elif command == "birthdays":
